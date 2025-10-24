@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - eFootball League 2025</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <div class="logo-container">
+                <div class="logo">EFL</div>
+                <span class="navbar-brand mb-0 h1">eFootball League 2025 - Admin</span>
+            </div>
+            
+            <!-- Sync Status -->
+            <div class="navbar-text ms-3">
+                <span id="sync-status" class="badge bg-success">
+                    <i class="fas fa-cloud me-1"></i>Supabase Online
+                </span>
+            </div>
+
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-info btn-sm me-2" onclick="dataSync.manualSync()">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                </button>
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Site
+                </a>
+                <button class="btn btn-outline-light btn-sm ms-2" id="logout-btn">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <!-- Login Section -->
+        <div id="login-section" class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <img src="https://i.ibb.co/NgGdC1gX/efootball-profile.jpg" alt="eFootball Admin" class="ef-profile-image mb-3">
+                        <h4 class="mb-0">Admin Access</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <label for="admin-email" class="form-label">Admin Email</label>
+                                <input type="email" class="form-control" id="admin-email" 
+                                       value="support@kishtechsite.online" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="admin-password" class="form-label">Admin Password</label>
+                                <input type="password" class="form-control" id="admin-password" 
+                                       placeholder="Enter admin password" required>
+                                <div class="form-text">
+                                    Contact support if you've forgotten the password
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-lock me-2"></i> Access Dashboard
+                            </button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <a href="#" id="forgot-password-link" class="text-info">
+                                <i class="fas fa-key me-1"></i> Forgot Password?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tournament Info Card -->
+                <div class="card mt-4">
+                    <div class="card-header text-center">
+                        <i class="fas fa-trophy me-2"></i> Tournament Control Center
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="mb-3">Manage players, fixtures, and match results for the eFootball League 2025.</p>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fw-bold fs-4 text-warning" id="players-count">0</div>
+                                <small>Players</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold fs-4 text-warning" id="fixtures-count">0</div>
+                                <small>Fixtures</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold fs-4 text-warning" id="results-count">0</div>
+                                <small>Results</small>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">Powered by Supabase - Real-time Database</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Section -->
+        <div id="forgot-password-section" class="row justify-content-center d-none">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0"><i class="fas fa-key me-2"></i>Reset Password</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="forgot-password-form">
+                            <div class="mb-3">
+                                <label for="forgot-email" class="form-label">Admin Email</label>
+                                <input type="email" class="form-control" id="forgot-email" 
+                                       value="support@kishtechsite.online" readonly>
+                                <div class="form-text">
+                                    Password reset link will be sent to this email
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i> Send Reset Link
+                            </button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <a href="#" class="back-to-login text-info">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset Password Section -->
+        <div id="reset-password-section" class="row justify-content-center d-none">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0"><i class="fas fa-lock me-2"></i>Set New Password</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="reset-password-form">
+                            <input type="hidden" id="reset-email">
+                            <input type="hidden" id="reset-token">
+                            <div class="mb-3">
+                                <label for="new-password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new-password" 
+                                       placeholder="Enter new password" required minlength="6">
+                                <div class="password-strength-container mt-2">
+                                    <div class="password-strength" id="password-strength-bar"></div>
+                                    <div class="small mt-1" id="password-strength-text"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm-password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirm-password" 
+                                       placeholder="Confirm new password" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-save me-2"></i> Reset Password
+                            </button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <a href="#" class="back-to-login text-info">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="d-none">
+            <!-- Welcome Header -->
+            <div class="text-center mb-4 p-4 rounded" style="background: rgba(255,255,255,0.1);">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <img src="https://i.ibb.co/NgGdC1gX/efootball-profile.jpg" alt="eFootball Admin" class="ef-profile-image">
+                    </div>
+                    <div class="col-md-8">
+                        <h2 class="mb-2 text-warning">Tournament Control Panel</h2>
+                        <p class="mb-0">Welcome back, Administrator! Manage all aspects of the eFootball League 2025.</p>
+                        <small class="text-muted">Real-time data synchronization with Supabase</small>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="fw-bold fs-3 text-warning" id="live-players">0</div>
+                        <small>Active Players</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-section">
+                <h4 class="mb-4 text-center text-warning">
+                    <i class="fas fa-user-shield me-2"></i> Admin Dashboard
+                </h4>
+                
+                <ul class="nav nav-pills mb-4 justify-content-center" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="players-tab" data-bs-toggle="pill" data-bs-target="#admin-players" type="button">
+                            <i class="fas fa-users me-2"></i> Manage Players
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="fixtures-admin-tab" data-bs-toggle="pill" data-bs-target="#admin-fixtures" type="button">
+                            <i class="fas fa-calendar me-2"></i> Manage Fixtures
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="results-tab" data-bs-toggle="pill" data-bs-target="#admin-results" type="button">
+                            <i class="fas fa-futbol me-2"></i> Input Results
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="notifications-tab" data-bs-toggle="pill" data-bs-target="#admin-notifications" type="button">
+                            <i class="fas fa-bell me-2"></i> Push Notifications
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="bulk-tab" data-bs-toggle="pill" data-bs-target="#admin-bulk" type="button">
+                            <i class="fas fa-layer-group me-2"></i> Bulk Operations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="sync-tab" data-bs-toggle="pill" data-bs-target="#admin-sync" type="button">
+                            <i class="fas fa-sync-alt me-2"></i> Data Management
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="adminTabsContent">
+                    <!-- Players Tab -->
+                    <div class="tab-pane fade show active" id="admin-players" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-user-plus me-2"></i> Add New Player
+                            </div>
+                            <div class="card-body">
+                                <form id="add-player-form">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="playerName" class="form-label">Player Name</label>
+                                            <input type="text" class="form-control" id="playerName" placeholder="Enter player name" required>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="playerTeam" class="form-label">Team</label>
+                                            <select class="form-select" id="playerTeam" required>
+                                                <option value="" selected disabled>Select team</option>
+                                                <option value="Kenya">Kenya</option>
+                                                <option value="Chelsea">Chelsea</option>
+                                                <option value="Liverpool">Liverpool</option>
+                                                <option value="Everton">Everton</option>
+                                                <option value="Manchester United">Manchester United</option>
+                                                <option value="West Ham">West Ham</option>
+                                                <option value="Arsenal">Arsenal</option>
+                                                <option value="Manchester City">Manchester City</option>
+                                                <option value="Tottenham">Tottenham</option>
+                                                <option value="Newcastle">Newcastle</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label for="playerStrength" class="form-label">Strength Rating</label>
+                                            <input type="number" class="form-control" id="playerStrength" placeholder="e.g., 3000" min="0" max="4000" value="2500">
+                                            <div class="form-text">Player skill level (0-4000)</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="playerPhoto" class="form-label">Player Photo URL</label>
+                                        <input type="text" class="form-control" id="playerPhoto" placeholder="Enter image URL (optional)">
+                                        <div class="form-text">Leave empty for auto-generated avatar</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i> Add Player
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-list me-2"></i> Current Players</span>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-light me-2" id="export-data">
+                                        <i class="fas fa-download me-1"></i> Export Data
+                                    </button>
+                                    <span class="badge bg-primary fs-6" id="players-badge">0</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover" id="players-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Player</th>
+                                                <th>Team</th>
+                                                <th>Strength</th>
+                                                <th>Matches</th>
+                                                <th>Points</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Dynamically loaded -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fixtures Tab -->
+                    <div class="tab-pane fade" id="admin-fixtures" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-calendar-plus me-2"></i> Schedule New Fixture
+                            </div>
+                            <div class="card-body">
+                                <form id="add-fixture-form">
+                                    <div class="row mb-3">
+                                        <div class="col-md-5">
+                                            <label for="homePlayerSelect" class="form-label">Home Player</label>
+                                            <select class="form-select" id="homePlayerSelect" required>
+                                                <option value="" selected disabled>Select player</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 text-center pt-4">
+                                            <div class="fw-bold">VS</div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label for="awayPlayerSelect" class="form-label">Away Player</label>
+                                            <select class="form-select" id="awayPlayerSelect" required>
+                                                <option value="" selected disabled>Select player</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="fixtureDate" class="form-label">Match Date</label>
+                                            <input type="date" class="form-control" id="fixtureDate" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="fixtureTime" class="form-label">Match Time</label>
+                                            <input type="time" class="form-control" id="fixtureTime" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fixtureVenue" class="form-label">Venue</label>
+                                        <input type="text" class="form-control" id="fixtureVenue" placeholder="Enter virtual stadium name" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-calendar-check me-2"></i> Schedule Fixture
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-edit me-2"></i> Manage Fixtures</span>
+                                <span class="badge bg-primary fs-6" id="fixtures-badge">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover" id="admin-fixtures-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Home Player</th>
+                                                <th>Away Player</th>
+                                                <th>Venue</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Dynamically loaded -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Tab -->
+                    <div class="tab-pane fade" id="admin-results" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-edit me-2"></i> Record Match Result
+                            </div>
+                            <div class="card-body">
+                                <form id="add-result-form">
+                                    <div class="row mb-3">
+                                        <div class="col-md-5">
+                                            <label for="homePlayerResult" class="form-label">Home Player</label>
+                                            <select class="form-select" id="homePlayerResult" required>
+                                                <option value="" selected disabled>Select player</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 text-center">
+                                            <label class="form-label">Final Score</label>
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <input type="number" class="form-control text-center" id="homeScore" min="0" value="0" style="width: 60px;" required>
+                                                <span class="mx-2 fw-bold">-</span>
+                                                <input type="number" class="form-control text-center" id="awayScore" min="0" value="0" style="width: 60px;" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label for="awayPlayerResult" class="form-label">Away Player</label>
+                                            <select class="form-select" id="awayPlayerResult" required>
+                                                <option value="" selected disabled>Select player</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="matchDateResult" class="form-label">Match Date</label>
+                                        <input type="date" class="form-control" id="matchDateResult" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i> Save Result
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-history me-2"></i> Match Results</span>
+                                <span class="badge bg-primary fs-6" id="results-badge">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover" id="admin-results-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Home Player</th>
+                                                <th>Score</th>
+                                                <th>Away Player</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Dynamically loaded -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Tab -->
+                    <div class="tab-pane fade" id="admin-notifications" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-bullhorn me-2"></i> Send Push Notifications to All Users
+                            </div>
+                            <div class="card-body">
+                                <form id="push-notification-form">
+                                    <div class="mb-3">
+                                        <label for="notification-title" class="form-label">Notification Title *</label>
+                                        <input type="text" class="form-control" id="notification-title" 
+                                               placeholder="Enter notification title" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="notification-message" class="form-label">Notification Message *</label>
+                                        <textarea class="form-control" id="notification-message" 
+                                                  rows="4" placeholder="Enter notification message" required></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="notification-type" class="form-label">Notification Type</label>
+                                            <select class="form-select" id="notification-type">
+                                                <option value="info">Information</option>
+                                                <option value="warning">Warning</option>
+                                                <option value="success">Success</option>
+                                                <option value="urgent">Urgent</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="notification-priority" class="form-label">Priority</label>
+                                            <select class="form-select" id="notification-priority">
+                                                <option value="low">Low</option>
+                                                <option value="medium" selected>Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Target Audience</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="target-audience" id="target-all" value="all" checked>
+                                            <label class="form-check-label" for="target-all">
+                                                All Users
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="target-audience" id="target-players" value="players">
+                                            <label class="form-check-label" for="target-players">
+                                                Players Only
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="testNotification()">
+                                            <i class="fas fa-bell me-1"></i> Test Notification
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane me-2"></i> Send to All Users
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification Statistics -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar me-2"></i> Notification Statistics
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="p-3 rounded" style="background: rgba(106, 17, 203, 0.2);">
+                                            <div class="h4 text-warning mb-1" id="total-notifications-sent">0</div>
+                                            <small>Total Sent</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="p-3 rounded" style="background: rgba(37, 117, 252, 0.2);">
+                                            <div class="h4 text-info mb-1" id="today-notifications">0</div>
+                                            <small>Sent Today</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="p-3 rounded" style="background: rgba(40, 167, 69, 0.2);">
+                                            <div class="h4 text-success mb-1" id="active-users">0</div>
+                                            <small>Active Users</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-3">
+                                        <div class="p-3 rounded" style="background: rgba(255, 193, 7, 0.2);">
+                                            <div class="h4 text-warning mb-1" id="notification-rate">0%</div>
+                                            <small>Engagement Rate</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification History -->
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-history me-2"></i> Notification History</span>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-info me-2" onclick="exportNotificationHistory()">
+                                        <i class="fas fa-download me-1"></i> Export
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="clearNotificationHistory()">
+                                        <i class="fas fa-trash me-1"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover" id="notification-history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date & Time</th>
+                                                <th>Title</th>
+                                                <th>Type</th>
+                                                <th>Target</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="notification-history-body">
+                                            <!-- Dynamically loaded -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="notification-history-empty" class="text-center text-muted p-4 d-none">
+                                    <i class="fas fa-bell-slash fa-3x mb-3"></i>
+                                    <h5>No notifications sent yet</h5>
+                                    <p>Notifications you send will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Operations Tab -->
+                    <div class="tab-pane fade" id="admin-bulk" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-calendar-plus me-2"></i> Bulk Fixture Creation
+                            </div>
+                            <div class="card-body">
+                                <form id="bulk-fixture-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fixture Data (CSV Format)</label>
+                                        <textarea class="form-control bg-dark text-light" id="bulk-fixture-data" rows="6" 
+                                                  placeholder="home_player_id,away_player_id,date,time,venue,is_home_leg&#10;1,2,2024-02-15,15:00,Virtual Stadium A,true&#10;3,4,2024-02-16,16:00,Virtual Stadium B,true"></textarea>
+                                        <div class="form-text">
+                                            Format: home_player_id, away_player_id, date (YYYY-MM-DD), time (HH:MM), venue, is_home_leg (true/false)
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-upload me-1"></i> Create Fixtures
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="bulkOperations.generateFixtureTemplate()">
+                                        <i class="fas fa-download me-1"></i> Download Template
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="fas fa-users-cog me-2"></i> Mass Player Updates
+                            </div>
+                            <div class="card-body">
+                                <form id="bulk-player-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Player Update Data (CSV Format)</label>
+                                        <textarea class="form-control bg-dark text-light" id="bulk-player-data" rows="6" 
+                                                  placeholder="playerId,field,value&#10;1,strength,3200&#10;2,team,Chelsea"></textarea>
+                                        <div class="form-text">
+                                            Format: playerId, fieldName, newValue (multiple field-value pairs per line)
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-sync me-1"></i> Update Players
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="bulkOperations.generatePlayerTemplate()">
+                                        <i class="fas fa-download me-1"></i> Download Template
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="fas fa-clipboard-list me-2"></i> Batch Result Entry
+                            </div>
+                            <div class="card-body">
+                                <form id="bulk-result-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Result Data (CSV Format)</label>
+                                        <textarea class="form-control bg-dark text-light" id="bulk-result-data" rows="6" 
+                                                  placeholder="home_player_id,away_player_id,home_score,away_score,date&#10;1,2,3,1,2024-02-15&#10;3,4,2,2,2024-02-16"></textarea>
+                                        <div class="form-text">
+                                            Format: home_player_id, away_player_id, home_score, away_score, date (YYYY-MM-DD)
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-save me-1"></i> Add Results
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="bulkOperations.generateResultTemplate()">
+                                        <i class="fas fa-download me-1"></i> Download Template
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="fas fa-file-export me-2"></i> CSV Import/Export
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Players</h6>
+                                        <button class="btn btn-outline-success w-100 mb-2" onclick="bulkOperations.exportToCSV('players')">
+                                            <i class="fas fa-download me-1"></i> Export
+                                        </button>
+                                        <input type="file" class="form-control bg-dark text-light mb-2" id="import-players-file" accept=".csv">
+                                        <button class="btn btn-outline-info w-100" onclick="document.getElementById('import-players-file').click()">
+                                            <i class="fas fa-upload me-1"></i> Import
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Fixtures</h6>
+                                        <button class="btn btn-outline-success w-100 mb-2" onclick="bulkOperations.exportToCSV('fixtures')">
+                                            <i class="fas fa-download me-1"></i> Export
+                                        </button>
+                                        <input type="file" class="form-control bg-dark text-light mb-2" id="import-fixtures-file" accept=".csv">
+                                        <button class="btn btn-outline-info w-100" onclick="document.getElementById('import-fixtures-file').click()">
+                                            <i class="fas fa-upload me-1"></i> Import
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Results</h6>
+                                        <button class="btn btn-outline-success w-100 mb-2" onclick="bulkOperations.exportToCSV('results')">
+                                            <i class="fas fa-download me-1"></i> Export
+                                        </button>
+                                        <input type="file" class="form-control bg-dark text-light mb-2" id="import-results-file" accept=".csv">
+                                        <button class="btn btn-outline-info w-100" onclick="document.getElementById('import-results-file').click()">
+                                            <i class="fas fa-upload me-1"></i> Import
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Management Tab -->
+                    <div class="tab-pane fade" id="admin-sync" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-sync-alt me-2"></i> Data Management
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="text-warning mb-3">Database Status</h5>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Database:</span>
+                                                <span id="server-status" class="badge bg-success">Supabase Online</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Last Refresh:</span>
+                                                <span id="last-sync-time">Never</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Data Version:</span>
+                                                <span id="data-version">v2.0 (Supabase)</span>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-success w-100 mb-3" onclick="dataSync.manualSync()">
+                                            <i class="fas fa-sync me-2"></i> Refresh Data
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="text-warning mb-3">Backup & Restore</h5>
+                                        <div class="mb-3">
+                                            <button class="btn btn-outline-info w-100 mb-2" onclick="exportTournamentData()">
+                                                <i class="fas fa-file-export me-1"></i> Export Data
+                                            </button>
+                                            <input type="file" id="import-file" class="form-control" accept=".json">
+                                            <button class="btn btn-outline-warning w-100 mt-2" onclick="importTournamentData()">
+                                                <i class="fas fa-file-import me-1"></i> Import Data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="fas fa-database me-2"></i> Database Management
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning">Reset Options</h6>
+                                        <div class="mb-3">
+                                            <button class="btn btn-outline-danger w-100 mb-2" onclick="resetAllResults()">
+                                                <i class="fas fa-eraser me-1"></i> Clear Results
+                                            </button>
+                                            <button class="btn btn-outline-warning w-100 mb-2" onclick="resetTournament()">
+                                                <i class="fas fa-trash-alt me-1"></i> Reset Tournament
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning">System Info</h6>
+                                        <div class="mb-3">
+                                            <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                                <small class="text-muted">Database: Supabase</small><br>
+                                                <small class="text-muted">Real-time: Enabled</small><br>
+                                                <small class="text-muted">Authentication: Supabase Auth</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <p>eFootball League 2025 &copy; All rights reserved</p>
+            <p class="text-muted">Admin Panel - Restricted Access | Secure Tournament Management</p>
+            <p class="text-muted">Powered by Supabase - Real-time Database</p>
+        </div>
+    </footer>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/bulk-operations.js"></script>
+
+    <script>
+        // Data management functions for Supabase
+        async function exportTournamentData() {
+            const players = await getData(DB_KEYS.PLAYERS);
+            const fixtures = await getData(DB_KEYS.FIXTURES);
+            const results = await getData(DB_KEYS.RESULTS);
+            
+            const data = {
+                players,
+                fixtures,
+                results,
+                exportDate: new Date().toISOString(),
+                tournament: 'eFootball League 2025',
+                version: '2.0',
+                database: 'Supabase'
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `efootball_tournament_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Tournament data exported successfully!', 'success');
+        }
+
+        async function importTournamentData() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Please select a file to import!', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('This will replace all current tournament data in Supabase. Continue?')) {
+                        showNotification('Importing data to Supabase...', 'info');
+                        
+                        // Clear existing data
+                        await supabase.from(DB_KEYS.RESULTS).delete().neq('id', 0);
+                        await supabase.from(DB_KEYS.FIXTURES).delete().neq('id', 0);
+                        await supabase.from(DB_KEYS.PLAYERS).delete().neq('id', 0);
+                        
+                        // Import new data
+                        if (data.players && data.players.length > 0) {
+                            await supabase.from(DB_KEYS.PLAYERS).insert(data.players);
+                        }
+                        if (data.fixtures && data.fixtures.length > 0) {
+                            await supabase.from(DB_KEYS.FIXTURES).insert(data.fixtures);
+                        }
+                        if (data.results && data.results.length > 0) {
+                            await supabase.from(DB_KEYS.RESULTS).insert(data.results);
+                        }
+                        
+                        showNotification('Tournament data imported successfully to Supabase!', 'success');
+                        await renderAdminPlayers();
+                        await renderAdminFixtures();
+                        await renderAdminResults();
+                        await populatePlayerSelects();
+                        fileInput.value = '';
+                    }
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showNotification('Invalid tournament data file!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Update sync status display
+        function updateSyncDisplay() {
+            const lastSync = localStorage.getItem('efl_last_sync');
+            
+            if (lastSync) {
+                document.getElementById('last-sync-time').textContent = new Date(lastSync).toLocaleString();
+            }
+            
+            document.getElementById('server-status').className = 'badge bg-success';
+            document.getElementById('server-status').textContent = 'Supabase Online';
+        }
+
+        // Initialize sync display
+        document.addEventListener('DOMContentLoaded', function() {
+            setInterval(updateSyncDisplay, 5000);
+            updateSyncDisplay();
+        });
+    </script>
+</body>
+</html>
