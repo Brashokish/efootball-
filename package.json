@@ -1,0 +1,9 @@
+{
+  "name": "efootball-league-frontend",
+  "version": "2.1.0", 
+  "description": "Frontend for eFootball Tournament Management System",
+  "scripts": {},
+  "devDependencies": {},
+  "author": "Brasho Kish",
+  "license": "MIT"
+}
