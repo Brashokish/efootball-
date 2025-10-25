@@ -1,12 +1,66 @@
-// API Service for eFootball League - Supabase Version
+// API Service for eFootball League - Render Backend Version
 class EFLAPI {
     constructor() {
-        this.isOnline = true; // Supabase is always online
-        console.log('✅ Using Supabase as backend');
+        this.isOnline = true;
+        this.backendUrl = 'https://efootball-backend-91me.onrender.com';
+        console.log('✅ Using Render backend with Supabase');
     }
 
-    // All data operations now handled directly by Supabase client in database.js
-    // This file can be removed or kept for future external API integrations
+    async request(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${this.backendUrl}${endpoint}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
+    }
+
+    // Health check
+    async healthCheck() {
+        return this.request('/api/health');
+    }
+
+    // Email reset
+    async sendResetEmail(emailData) {
+        return this.request('/api/send-reset-email', {
+            method: 'POST',
+            body: JSON.stringify(emailData)
+        });
+    }
+
+    // Push notifications
+    async saveSubscription(subscription) {
+        return this.request('/api/save-subscription', {
+            method: 'POST',
+            body: JSON.stringify(subscription)
+        });
+    }
+
+    async sendNotification(notificationData) {
+        return this.request('/api/send-notification', {
+            method: 'POST',
+            body: JSON.stringify(notificationData)
+        });
+    }
+
+    // Initialize league
+    async initializeLeague() {
+        return this.request('/api/initialize', {
+            method: 'POST'
+        });
+    }
 }
 
 // Create global API instance
@@ -39,7 +93,7 @@ function updateSyncStatus() {
     const statusElement = document.getElementById('sync-status');
     if (!statusElement) return;
     
-    statusElement.innerHTML = '<i class="fas fa-cloud me-1"></i>Supabase Online';
+    statusElement.innerHTML = '<i class="fas fa-cloud me-1"></i>Supabase + Render Online';
     statusElement.className = 'badge bg-success';
 }
 
@@ -52,6 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (syncBtn) {
         syncBtn.addEventListener('click', () => dataSync.manualSync());
     }
+    
+    // Test backend connection
+    eflAPI.healthCheck().then(health => {
+        console.log('✅ Backend connection successful:', health);
+    }).catch(err => {
+        console.warn('⚠️ Backend connection failed:', err.message);
+    });
 });
 
 // Keep your existing notification function
