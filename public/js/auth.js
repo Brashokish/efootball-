@@ -3,7 +3,7 @@ console.log('🔐 Admin Auth System Loading...');
 
 // ==================== CONFIGURATION ====================
 const ADMIN_EMAIL = 'support@kishtechsite.online';
-
+const supabase = window.supabase;
 // ==================== HELPER FUNCTIONS ====================
 
 // Generate a secure reset token
