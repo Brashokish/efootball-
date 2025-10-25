@@ -574,16 +574,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } else {
                     alert('Unauthorized access. Please log in as admin.');
                 }
-        } catch (error) {
+            } // ← Added this missing closing brace for the else block
+        } catch (error) { // ← This was the problematic 'catch' token
             console.error('❌ Error initializing admin dashboard:', error);
             const errorContainer = document.getElementById('adminError');
             if (errorContainer) {
                 errorContainer.textContent = 'Error loading admin dashboard. Check console for details.';
             }
         }
-    }
-});
-
+    } // ← This closes the if (window.location.pathname.includes('admin.html')) block
 
     // Auto-close navbar on mobile when links are clicked
     const navbarCollapse = document.querySelector('.navbar-collapse');
@@ -599,4 +598,4 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
     });
-});
+}); // ← This closes the DOMContentLoaded function
