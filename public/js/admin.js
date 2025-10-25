@@ -525,35 +525,65 @@ function setupAdminEventListeners() {
     }
 }
 
-// Initialize admin dashboard
+// ✅ Initialize admin dashboard safely (no redirect)
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Admin page loaded, checking authentication...');
-    
+
+    // Only run this on admin pages
     if (window.location.pathname.includes('admin.html')) {
-        const isAuthenticated = await checkAdminAuth();
-        if (isAuthenticated) {
-            console.log('Admin authenticated, initializing dashboard...');
-            
-            // Initialize database
-            await initializeDatabase();
-            
-            setupAdminEventListeners();
-            await populatePlayerSelects();
-            await renderAdminPlayers();
-            await renderAdminFixtures();
-            await renderAdminResults();
-            
-            // Set today's date as default for date inputs
-            const today = new Date().toISOString().split('T')[0];
-            const fixtureDate = document.getElementById('fixtureDate');
-            const matchDateResult = document.getElementById('matchDateResult');
-            
-            if (fixtureDate) fixtureDate.value = today;
-            if (matchDateResult) matchDateResult.value = today;
-            
-            console.log('Admin dashboard initialized successfully');
+
+        // Prevent crash if checkAdminAuth is missing
+        if (typeof checkAdminAuth !== 'function') {
+            console.error('❌ checkAdminAuth is not defined. Ensure auth.js is loaded before admin.js');
+            const errorContainer = document.getElementById('adminError');
+            if (errorContainer) {
+                errorContainer.textContent = 'Authentication system not loaded. Please refresh the page.';
+            }
+            return;
+        }
+
+        try {
+            const isAuthenticated = await checkAdminAuth();
+
+            if (isAuthenticated) {
+                console.log('✅ Admin authenticated, initializing dashboard...');
+
+                // Initialize Supabase or DB connection
+                await initializeDatabase();
+
+                // Load admin UI data
+                setupAdminEventListeners();
+                await populatePlayerSelects();
+                await renderAdminPlayers();
+                await renderAdminFixtures();
+                await renderAdminResults();
+
+                // Set today's date on forms
+                const today = new Date().toISOString().split('T')[0];
+                const fixtureDate = document.getElementById('fixtureDate');
+                const matchDateResult = document.getElementById('matchDateResult');
+                if (fixtureDate) fixtureDate.value = today;
+                if (matchDateResult) matchDateResult.value = today;
+
+                console.log('✅ Admin dashboard initialized successfully');
+            } else {
+                console.warn('⚠️ Admin not authenticated.');
+                const errorContainer = document.getElementById('adminError');
+                if (errorContainer) {
+                    errorContainer.textContent = 'You are not authorized to access this dashboard.';
+                } else {
+                    alert('Unauthorized access. Please log in as admin.');
+                }
+        } catch (error) {
+            console.error('❌ Error initializing admin dashboard:', error);
+            const errorContainer = document.getElementById('adminError');
+            if (errorContainer) {
+                errorContainer.textContent = 'Error loading admin dashboard. Check console for details.';
+            }
         }
     }
+});
+
 
     // Auto-close navbar on mobile when links are clicked
     const navbarCollapse = document.querySelector('.navbar-collapse');
