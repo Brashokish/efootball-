@@ -110,6 +110,9 @@ const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SU
 
 if (!supabase) {
     console.error('Supabase client failed to initialize');
+} else {
+    // ✅ Make globally accessible
+    window.supabase = supabase;
 }
 
 // ==================== Core Database Functions ====================
