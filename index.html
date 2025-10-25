@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>eFootball League 2025</title>
 
-
   <!-- Favicon & PWA icons -->
   <link rel="icon" href="/icons/icon-192x192.png" sizes="192x192" type="image/png">
   <!-- Bootstrap CSS (CDN) -->
@@ -27,7 +26,7 @@
             <!-- Sync Status -->
             <div class="navbar-text ms-3">
                 <span id="sync-status" class="badge bg-success">
-                    <i class="fas fa-cloud me-1"></i>Supabase Online
+                    <i class="fas fa-cloud me-1"></i>Supabase + Render Online
                 </span>
             </div>
 
@@ -108,7 +107,9 @@
                                     <li>Team strength balanced for fairness</li>
                                     <li>Points system: Win = 3, Draw = 1, Loss = 0</li>
                                     <li>Prize: 500 KES for the winner</li>
-                                    <li><strong>Real-time updates with Supabase</strong></li>
+                                    <li><strong>Real-time updates with Supabase + Render</strong></li>
+                                    <li><strong>Push notifications enabled</strong></li>
+                                    <li><strong>Email support for admin</strong></li>
                                 </ul>
                             </div>
                         </div>
@@ -271,6 +272,9 @@
                 Support: <a href="mailto:support@kishtechsite.online">support@kishtechsite.online</a> | 
                 Helpline: 0796307638
             </p>
+            <p class="text-muted small">
+                Powered by Supabase + Render | Real-time Database & API
+            </p>
         </div>
     </footer>
 
@@ -290,6 +294,49 @@
     <script src="/js/export.js" defer></script>
     <script src="/js/app.js" defer></script>
 
+    <!-- Service Worker Registration -->
+    <script>
+        // Register service worker for PWA and push notifications
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installButton = document.getElementById('install-button');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installButton.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installButton.style.display = 'none';
+            deferredPrompt = null;
+            console.log('PWA installed successfully');
+        });
+    </script>
+
     <!-- Right-click disable script -->
     <script>
         document.addEventListener("contextmenu", function(event) {
@@ -305,6 +352,20 @@
                 e.preventDefault();
                 alert("Developer tools are disabled on this website.");
             }
+        });
+
+        // Backend connection test
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test backend connection when page loads
+            setTimeout(() => {
+                if (typeof eflAPI !== 'undefined') {
+                    eflAPI.healthCheck().then(health => {
+                        console.log('✅ Frontend connected to Render backend:', health);
+                    }).catch(err => {
+                        console.warn('⚠️ Backend connection issue:', err.message);
+                    });
+                }
+            }, 2000);
         });
     </script>
 </body>
