@@ -1,21 +1,14 @@
 {
   "version": 2,
   "name": "efootball-league-frontend",
+  "public": "public",
   "builds": [
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
-    }
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "admin.html", "use": "@vercel/static" },
+    { "src": "public/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+    { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "env": {
     "BACKEND_URL": "https://your-app-name.onrender.com"
