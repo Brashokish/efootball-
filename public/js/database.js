@@ -484,6 +484,7 @@ function showNotification(message, type = 'info') {
 }
 
 // ==================== Global Access ====================
+window.supabase = supabase;
 window.getData = getData;
 window.saveData = saveData;
 window.addPlayer = addPlayer;
