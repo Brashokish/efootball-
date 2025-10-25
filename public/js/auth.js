@@ -17,11 +17,30 @@ const showNotification = (message, type) => {
     window.showNotification(message, type);
   } else {
     // Fallback notification
-    alert(`${type.toUpperCase()}: ${message}`);
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-warning';
+    
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+      <strong>${type.toUpperCase()}:</strong> ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
   }
 };
 
-// Simple hash function for browser (replaces bcrypt)
+// Simple hash function for browser
 const simpleHash = async (password) => {
   const encoder = new TextEncoder();
   const data = encoder.encode(password + 'efootball-admin-salt-2025');
@@ -130,6 +149,11 @@ const logoutAdmin = async () => {
     
     showNotification('Logged out successfully', 'success');
     console.log('✅ Admin logged out');
+    
+    // Reload to show login form
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   } catch (error) {
     console.error('❌ Logout error:', error);
     showNotification('Logout failed', 'error');
@@ -243,19 +267,28 @@ const sendPasswordResetEmail = async (email, resetLink) => {
       return true;
     } else {
       // Fallback: show the link to copy
-      showNotification(`Copy this reset link: ${resetLink}`, 'info');
+      const copySuccess = await copyToClipboard(resetLink);
+      showNotification(`Reset link generated! ${copySuccess ? 'Copied to clipboard:' : ''} ${resetLink}`, 'info');
       console.log('📋 Manual reset link:', resetLink);
-      
-      // Copy to clipboard if possible
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(resetLink);
-        console.log('📋 Reset link copied to clipboard');
-      }
       return true;
     }
   } catch (error) {
     console.error('❌ Email sending error:', error);
     showNotification(`Email unavailable. Copy link manually: ${resetLink}`, 'warning');
+    return false;
+  }
+};
+
+// Copy to clipboard helper
+const copyToClipboard = async (text) => {
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Copy failed:', error);
     return false;
   }
 };
@@ -280,13 +313,13 @@ const requestPasswordReset = async (email) => {
     await saveResetToken(resetToken);
 
     const resetLink = `${window.location.origin}${window.location.pathname}?reset_token=${resetToken}&email=${encodeURIComponent(email)}`;
-    console.log('🔄 Sending reset email with link:', resetLink);
+    console.log('🔄 Generated reset link:', resetLink);
 
     await sendPasswordResetEmail(email, resetLink);
     return true;
   } catch (error) {
     console.error('❌ Password reset request failed:', error);
-    showNotification('Error sending reset email.', 'error');
+    showNotification('Error generating reset link.', 'error');
     return false;
   } finally {
     if (submitBtn) {
@@ -302,33 +335,47 @@ const showResetPasswordForm = (email, token) => {
   const loginSection = document.getElementById('login-section');
   const resetSection = document.getElementById('reset-password-section');
 
-  loginSection?.classList.add('d-none');
-  resetSection?.classList.remove('d-none');
+  if (loginSection) loginSection.classList.add('d-none');
+  if (resetSection) resetSection.classList.remove('d-none');
 
-  document.getElementById('reset-email').value = email;
-  document.getElementById('reset-token').value = token;
+  const resetEmail = document.getElementById('reset-email');
+  const resetToken = document.getElementById('reset-token');
+  
+  if (resetEmail) resetEmail.value = email;
+  if (resetToken) resetToken.value = token;
 };
 
 const showForgotPasswordForm = () => {
   const loginSection = document.getElementById('login-section');
   const forgotSection = document.getElementById('forgot-password-section');
 
-  loginSection?.classList.add('d-none');
-  forgotSection?.classList.remove('d-none');
-  document.getElementById('forgot-email').value = ADMIN_EMAIL;
+  if (loginSection) loginSection.classList.add('d-none');
+  if (forgotSection) forgotSection.classList.remove('d-none');
+  
+  const forgotEmail = document.getElementById('forgot-email');
+  if (forgotEmail) forgotEmail.value = ADMIN_EMAIL;
 };
 
 const showLoginForm = () => {
-  document.getElementById('login-section')?.classList.remove('d-none');
-  document.getElementById('forgot-password-section')?.classList.add('d-none');
-  document.getElementById('reset-password-section')?.classList.add('d-none');
+  const loginSection = document.getElementById('login-section');
+  const forgotSection = document.getElementById('forgot-password-section');
+  const resetSection = document.getElementById('reset-password-section');
+
+  if (loginSection) loginSection.classList.remove('d-none');
+  if (forgotSection) forgotSection.classList.add('d-none');
+  if (resetSection) resetSection.classList.add('d-none');
 };
 
 const showAdminDashboard = () => {
-  document.getElementById('login-section')?.classList.add('d-none');
-  document.getElementById('forgot-password-section')?.classList.add('d-none');
-  document.getElementById('reset-password-section')?.classList.add('d-none');
-  document.getElementById('admin-dashboard')?.classList.remove('d-none');
+  const loginSection = document.getElementById('login-section');
+  const forgotSection = document.getElementById('forgot-password-section');
+  const resetSection = document.getElementById('reset-password-section');
+  const adminDashboard = document.getElementById('admin-dashboard');
+
+  if (loginSection) loginSection.classList.add('d-none');
+  if (forgotSection) forgotSection.classList.add('d-none');
+  if (resetSection) resetSection.classList.add('d-none');
+  if (adminDashboard) adminDashboard.classList.remove('d-none');
 };
 
 const checkResetTokenInURL = () => {
@@ -345,66 +392,89 @@ const checkResetTokenInURL = () => {
 
 // ==================== EVENT LISTENERS ====================
 
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('🔐 Admin page loaded, setting up auth...');
-
-  checkResetTokenInURL();
-
-  // Check if user is already authenticated
-  const isAuthenticated = await checkAdminAuth();
-  if (isAuthenticated) {
-    console.log('✅ Admin already authenticated, showing dashboard');
-    showAdminDashboard();
-  }
+const setupAuthEventListeners = () => {
+  console.log('🔧 Setting up auth event listeners...');
 
   // Login form
-  document.getElementById('login-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const password = document.getElementById('admin-password').value;
-    const success = await loginAdmin(password);
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const passwordInput = document.getElementById('admin-password');
+      const password = passwordInput?.value;
+      
+      if (!password) {
+        showNotification('Please enter a password', 'error');
+        return;
+      }
 
-    if (success) {
-      showAdminDashboard();
-    }
-  });
+      const success = await loginAdmin(password);
+      if (success) {
+        showAdminDashboard();
+        if (passwordInput) passwordInput.value = ''; // Clear password field
+      }
+    });
+  }
 
-  // Logout
-  document.getElementById('logout-btn')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    await logoutAdmin();
-    window.location.reload();
-  });
+  // Logout button
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await logoutAdmin();
+    });
+  }
 
   // Forgot password form
-  document.getElementById('forgot-password-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('forgot-email').value;
-    await requestPasswordReset(email);
-  });
+  const forgotPasswordForm = document.getElementById('forgot-password-form');
+  if (forgotPasswordForm) {
+    forgotPasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('forgot-email');
+      const email = emailInput?.value || ADMIN_EMAIL;
+      await requestPasswordReset(email);
+    });
+  }
 
   // Reset password form
-  document.getElementById('reset-password-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('reset-email').value;
-    const token = document.getElementById('reset-token').value;
-    const newPassword = document.getElementById('new-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
+  const resetPasswordForm = document.getElementById('reset-password-form');
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('reset-email');
+      const tokenInput = document.getElementById('reset-token');
+      const newPasswordInput = document.getElementById('new-password');
+      const confirmPasswordInput = document.getElementById('confirm-password');
 
-    if (newPassword !== confirmPassword) {
-      showNotification('Passwords do not match!', 'error');
-      return;
-    }
+      const email = emailInput?.value;
+      const token = tokenInput?.value;
+      const newPassword = newPasswordInput?.value;
+      const confirmPassword = confirmPasswordInput?.value;
 
-    if (newPassword.length < 6) {
-      showNotification('Password must be at least 6 characters long!', 'error');
-      return;
-    }
+      if (!email || !token || !newPassword || !confirmPassword) {
+        showNotification('Please fill all fields', 'error');
+        return;
+      }
 
-    const success = await resetPassword(token, newPassword);
-    if (success) {
-      setTimeout(showLoginForm, 2000);
-    }
-  });
+      if (newPassword !== confirmPassword) {
+        showNotification('Passwords do not match!', 'error');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showNotification('Password must be at least 6 characters long!', 'error');
+        return;
+      }
+
+      const success = await resetPassword(token, newPassword);
+      if (success) {
+        // Clear forms
+        if (newPasswordInput) newPasswordInput.value = '';
+        if (confirmPasswordInput) confirmPasswordInput.value = '';
+        setTimeout(showLoginForm, 2000);
+      }
+    });
+  }
 
   // Back to login links
   document.querySelectorAll('.back-to-login').forEach(link => {
@@ -415,10 +485,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Forgot password link
-  document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showForgotPasswordForm();
-  });
+  const forgotPasswordLink = document.getElementById('forgot-password-link');
+  if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showForgotPasswordForm();
+    });
+  }
+};
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('🔐 Admin page loaded, initializing auth system...');
+
+  // Check for reset tokens in URL
+  checkResetTokenInURL();
+
+  // Setup event listeners
+  setupAuthEventListeners();
+
+  // Check authentication status
+  try {
+    const isAuthenticated = await checkAdminAuth();
+    if (isAuthenticated) {
+      console.log('✅ Admin already authenticated, showing dashboard');
+      showAdminDashboard();
+    } else {
+      console.log('🔒 Admin not authenticated, showing login form');
+      showLoginForm();
+    }
+  } catch (error) {
+    console.error('❌ Auth initialization error:', error);
+    showLoginForm();
+  }
 });
 
 // ==================== GLOBAL EXPORTS ====================
@@ -428,5 +528,6 @@ window.checkAdminAuth = checkAdminAuth;
 window.loginAdmin = loginAdmin;
 window.logoutAdmin = logoutAdmin;
 window.requestPasswordReset = requestPasswordReset;
+window.showNotification = showNotification;
 
 console.log('✅ Auth system loaded successfully');
