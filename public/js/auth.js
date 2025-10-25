@@ -11,33 +11,35 @@ const generateResetToken = () =>
   Math.random().toString(36).substring(2, 15) +
   Math.random().toString(36).substring(2, 15);
 
-// Show notifications
+// Show notifications - FIXED: No recursion
 const showNotification = (message, type) => {
-  if (typeof window.showNotification === 'function') {
+  // Check if there's a global notification function first
+  if (window.showNotification !== showNotification && typeof window.showNotification === 'function') {
     window.showNotification(message, type);
-  } else {
-    // Fallback notification
-    const alertClass = type === 'success' ? 'alert-success' : 
-                      type === 'error' ? 'alert-danger' : 'alert-warning';
-    
-    // Create a simple notification
-    const notification = document.createElement('div');
-    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-      <strong>${type.toUpperCase()}:</strong> ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.remove();
-      }
-    }, 5000);
+    return;
   }
+  
+  // Fallback notification
+  const alertClass = type === 'success' ? 'alert-success' : 
+                    type === 'error' ? 'alert-danger' : 'alert-warning';
+  
+  // Create a simple notification
+  const notification = document.createElement('div');
+  notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  notification.innerHTML = `
+    <strong>${type.toUpperCase()}:</strong> ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
 };
 
 // Simple hash function for browser
@@ -55,6 +57,12 @@ const simpleHash = async (password) => {
 // Check if admin is authenticated
 const checkAdminAuth = async () => {
   try {
+    // Wait for supabase to be available
+    if (typeof supabase === 'undefined') {
+      console.error('❌ Supabase client not available');
+      return false;
+    }
+
     console.log('🔍 Checking admin auth with Supabase...');
     const { data, error } = await supabase
       .from('admin_auth')
@@ -79,6 +87,12 @@ const checkAdminAuth = async () => {
 // Login admin
 const loginAdmin = async (enteredPassword) => {
   try {
+    // Check if supabase is available
+    if (typeof supabase === 'undefined') {
+      showNotification('Database connection not available', 'error');
+      return false;
+    }
+
     console.log('🔐 Attempting admin login...');
     
     // Get stored hash from Supabase
@@ -137,6 +151,11 @@ const loginAdmin = async (enteredPassword) => {
 // Logout admin
 const logoutAdmin = async () => {
   try {
+    if (typeof supabase === 'undefined') {
+      showNotification('Database connection not available', 'error');
+      return;
+    }
+
     console.log('🚪 Logging out admin...');
     
     await supabase
@@ -164,6 +183,10 @@ const logoutAdmin = async () => {
 const saveResetToken = async (token) => {
   const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   try {
+    if (typeof supabase === 'undefined') {
+      throw new Error('Supabase client not available');
+    }
+
     const { error } = await supabase
       .from('admin_auth')
       .update({ 
@@ -183,6 +206,11 @@ const saveResetToken = async (token) => {
 // Validate password reset token
 const validateResetToken = async (token) => {
   try {
+    if (typeof supabase === 'undefined') {
+      console.error('❌ Supabase client not available');
+      return false;
+    }
+
     const { data, error } = await supabase
       .from('admin_auth')
       .select('reset_token, reset_expires')
@@ -251,7 +279,21 @@ const resetPassword = async (token, newPassword) => {
   }
 };
 
-// ==================== PASSWORD RESET EMAIL ====================
+// ==================== PASSWORD RESET ====================
+
+// Copy to clipboard helper
+const copyToClipboard = async (text) => {
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Copy failed:', error);
+    return false;
+  }
+};
 
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetLink) => {
@@ -275,20 +317,6 @@ const sendPasswordResetEmail = async (email, resetLink) => {
   } catch (error) {
     console.error('❌ Email sending error:', error);
     showNotification(`Email unavailable. Copy link manually: ${resetLink}`, 'warning');
-    return false;
-  }
-};
-
-// Copy to clipboard helper
-const copyToClipboard = async (text) => {
-  try {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Copy failed:', error);
     return false;
   }
 };
@@ -496,7 +524,7 @@ const setupAuthEventListeners = () => {
 
 // ==================== INITIALIZATION ====================
 
-document.addEventListener('DOMContentLoaded', async () => {
+const initializeAuth = async () => {
   console.log('🔐 Admin page loaded, initializing auth system...');
 
   // Check for reset tokens in URL
@@ -504,6 +532,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup event listeners
   setupAuthEventListeners();
+
+  // Check if supabase is available before checking auth
+  if (typeof supabase === 'undefined') {
+    console.error('❌ Supabase client not available - check script loading order');
+    showNotification('Database connection not ready', 'error');
+    showLoginForm();
+    return;
+  }
 
   // Check authentication status
   try {
@@ -519,7 +555,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('❌ Auth initialization error:', error);
     showLoginForm();
   }
-});
+};
+
+// Wait for DOM and supabase to be ready
+document.addEventListener('DOMContentLoaded', initializeAuth);
 
 // ==================== GLOBAL EXPORTS ====================
 
@@ -528,6 +567,5 @@ window.checkAdminAuth = checkAdminAuth;
 window.loginAdmin = loginAdmin;
 window.logoutAdmin = logoutAdmin;
 window.requestPasswordReset = requestPasswordReset;
-window.showNotification = showNotification;
 
 console.log('✅ Auth system loaded successfully');
